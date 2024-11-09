@@ -3,6 +3,7 @@ import time
 import re
 from PIL import Image
 import os
+import sys
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -21,6 +22,8 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # 禁用自动化标签
 
+cookies = {}
+
 print("初始化已完成.")
 input("请在即将打开的浏览器窗口中直接使用[在线阅读]按钮选择要下载的教材.按Enter键继续.")
 
@@ -36,6 +39,7 @@ try:
     new_url = driver.current_url
     
 finally:
+    driver.get_cookies()
     driver.quit()
 
 if ("https://book.pep.com.cn/" in new_url) == False:
@@ -52,33 +56,38 @@ else:
 
 BookId = int(BookId)
 
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
-
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "Referer": f"https://book.pep.com.cn/{BookId}/mobile/index.html",
 }
-cookies = {}
 
 def getCookie():
     global cookies
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get(f"https://book.pep.com.cn/{BookId}/mobile/index.html")
     initial_title = driver.title
     for _ in range(90):
         current_title = driver.title
         if current_title != initial_title:
             cookie = driver.get_cookies()
-            cookies = {cookie['name']: cookie['value'] for cookie in cookie} #直接以captcha页的cookie覆盖现有cookie
+            cookies = {cookie['name']: cookie['value'] for cookie in cookie} #直接以captcha页的cookie覆盖现有cookie'
+            driver.quit()
             return True
         time.sleep(1)
         
     print("超时")
     return False
 
+def print_progress_bar(progress, total, bar_length=50):
+    percent = progress / total
+    arrow = '█' * int(percent * bar_length)
+    spaces = ' ' * (bar_length - len(arrow))
+    sys.stdout.write(f'\n\r进度: [{arrow}{spaces}] {percent:.1%}\n')
+    sys.stdout.flush()
+
 def wget(url,filePath = None):
     response = requests.get(url, headers=headers,cookies=cookies)
-    if ("text/html" in response.headers.get('Content-Type', '').lower()): # 检查内容类型是否包含 "text/html" 字符串
+    if ("text/html" in response.headers.get('Content-Type', '').lower()): #检查结果类型
         print("请通过人机验证")
         if(getCookie()):
             print("人机验证成功。")
@@ -118,7 +127,7 @@ os.makedirs(saveDir, exist_ok=True)
 for i in range (1, int(tPage)+1):
     SingleImgPath = os.path.join(saveDir, f"{i}.jpg")
     wget(f"https://book.pep.com.cn/{BookId}/files/mobile/{i}.jpg?{cTime}",SingleImgPath)
-    print("进度:{}%. ".format(str(round(i/int(tPage)*1000)/10)))
+    print_progress_bar(round(i/int(tPage)*1000)/10,100)
 
 imgFolder = "./{}".format(bookTitle)
 pdfOutput = "{}.pdf".format(bookTitle)
