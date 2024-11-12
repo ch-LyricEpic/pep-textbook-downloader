@@ -70,7 +70,7 @@ def getCookie():
         current_title = driver.title
         if current_title != initial_title:
             cookie = driver.get_cookies()
-            cookies = {cookie['name']: cookie['value'] for cookie in cookie} #直接以captcha页的cookie覆盖现有cookie'
+            cookies = {cookie['name']: cookie['value'] for cookie in cookie} #直接以captcha页的cookie覆盖现有cookie
             driver.quit()
             return True
         time.sleep(1)
@@ -117,7 +117,7 @@ tPage = totalPageCntMatch.group(1) if totalPageCntMatch else None
 cTime = createTimeMatch.group(1) if createTimeMatch else None
 bookTitle = BookTitleMatch.group(1) if BookTitleMatch else None
 
-if input("是否确认下载(Y/N) : 当前下载书本为[ " + bookTitle + " ], 总页数为[ " + str(tPage) + " ], 书籍编号为[ " + str(BookId) + " ]") != "Y":
+if input(f"是否确认下载(Y/N) : 当前下载书本为[ {bookTitle} ], 总页数为[ {tPage} ], 书籍编号为[ {BookId} ]") != "Y":
     exit()
 
 curDir = os.path.dirname(os.path.abspath(__file__))
